@@ -11,11 +11,14 @@ from . import settings
 from requests.cookies import RequestsCookieJar
 from typing import Optional
 
+
 class Error(Exception):
     pass
 
+
 class LinkedinSessionExpired(Error):
     pass
+
 
 class CookieRepository(object):
     def __init__(self, cookies_dir=settings.COOKIE_PATH):
@@ -26,7 +29,6 @@ class CookieRepository(object):
         cookiejar_filepath = self._get_cookies_filepath(username)
         with open(cookiejar_filepath, "wb") as f:
             pickle.dump(cookies, f)
-
 
     def get(self, username: str) -> Optional[RequestsCookieJar]:
         cookies = self._load_cookies_from_cache(username)
@@ -44,7 +46,6 @@ class CookieRepository(object):
 
     def _load_cookies_from_cache(self, username: str) -> Optional[RequestsCookieJar]:
         cookiejar_filepath = self._get_cookies_filepath(username)
-
         try:
             with open(cookiejar_filepath, "rb") as f:
                 cookies = pickle.load(f)
@@ -53,4 +54,12 @@ class CookieRepository(object):
             return None
 
     @staticmethod
-    def _is_token_stil_valid(cookiejar: RequestsCookieJar):
+    def _is_token_still_valid(cookiejar: RequestsCookieJar):
+        _now = time.time()
+        for cookie in cookiejar:
+            if cookie.name == "JSESSIONID" and cookie.value:
+                if cookie.expires and cookie.expires > _now:
+                    return True
+                break
+
+        return False
